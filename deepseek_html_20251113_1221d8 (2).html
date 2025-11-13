@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar | Minimal</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        /* ALL YOUR ORIGINAL CSS STAYS EXACTLY THE SAME */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ivory: #fffff0;
+            --linen: #faf0e6;
+            --seashell: #fff5ee;
+            --antique-white: #faebd7;
+            --old-lace: #fdf5e6;
+            --cosmic-latte: #fff8e7;
+            --pale-gold: #e6d7af;
+            --soft-clay: #d4c4a8;
+            --dusty-rose: #d8a48f;
+            --sage-green: #a8b8a0;
+            --muted-blue: #a8c0c8;
+            --deep-charcoal: #2f2f2f;
+            --soft-gray: #8a8a8a;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+            background: linear-gradient(135deg, var(--cosmic-latte) 0%, var(--old-lace) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--deep-charcoal);
+            line-height: 1.6;
+        }
+
+        /* Emoji Grayscale Filter */
+        .emoji-subtle {
+            filter: grayscale(1) brightness(0.7);
+            opacity: 0.5;
+        }
+
+        /* Login Page Styles */
+        .login-container {
+            background: var(--ivory);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(47, 47, 47, 0.08);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            border: 1px solid var(--pale-gold);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--dusty-rose), var(--sage-green), var(--muted-blue));
+        }
+
+        .app-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--deep-charcoal);
+            font-weight: 300;
+            border: 2px solid var(--deep-charcoal);
+        }
+
+        .login-title {
+            font-size: 36px;
+            font-weight: 300;
+            color: var(--deep-charcoal);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .login-subtitle {
+            color: var(--soft-gray);
+            margin-bottom: 32px;
+            font-size: 16px;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .login-form {
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--deep-charcoal);
+            font-weight: 400;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--pale-gold);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: var(--seashell);
+            color: var(--deep-charcoal);
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--dusty-rose);
+            box-shadow: 0 0 0 2px rgba(216, 164, 143, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: transparent;
+            color: var(--deep-charcoal);
+            border: 1px solid var(--deep-charcoal);
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-login:hover {
+            background: var(--deep-charcoal);
+            color: var(--ivory);
+            transform: translateY(-2px);
+        }
+
+        .btn-signup {
+            width: 100%;
+            background: transparent;
+            color: var(--soft-gray);
+            border: 1px solid var(--soft-gray);
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-signup:hover {
+            background: var(--soft-gray);
+            color: var(--ivory);
+        }
+
+        .btn-logout {
+            background: transparent;
+            color: var(--deep-charcoal);
+            border: 1px solid var(--deep-charcoal);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 400;
+            font-family: inherit;
+        }
+
+        .btn-logout:hover {
+            background: var(--deep-charcoal);
+            color: var(--ivory);
+        }
+
+        .login-footer {
+            margin-top: 32px;
+            color: var(--soft-gray);
+            font-size: 13px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .error-message {
+            color: var(--dusty-rose);
+            margin-top: 12px;
+            display: none;
+            font-size: 14px;
+            text-align: center;
+            padding: 8px;
+            background: var(--seashell);
+            border-radius: 6px;
+            border: 1px solid var(--pale-gold);
+        }
+
+        /* App Styles */
+        .app-container {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .app {
+            background: var(--ivory);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(47, 47, 47, 0.08);
+            overflow: hidden;
+            border: 1px solid var(--pale-gold);
+        }
+
+        .app::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--pale-gold), transparent);
+        }
+
+        .app-header {
+            background: var(--linen);
+            color: var(--deep-charcoal);
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--pale-gold);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--deep-charcoal);
+            font-weight: 400;
+            font-size: 16px;
+            border: 1px solid var(--deep-charcoal);
+        }
+
+        .app-content {
+            display: flex;
+            min-height: 640px;
+        }
+
+        /* Calendar Styles */
+        .calendar-section {
+            flex: 1;
+            padding: 32px;
+            border-right: 1px solid var(--pale-gold);
+            background: var(--old-lace);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .month-navigation {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: var(--deep-charcoal);
+            border: 1px solid var(--pale-gold);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 400;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            background: var(--pale-gold);
+            border-color: var(--soft-clay);
+        }
+
+        .current-month {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--deep-charcoal);
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 500;
+            padding: 16px 8px;
+            background: transparent;
+            color: var(--deep-charcoal);
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid var(--pale-gold);
+            letter-spacing: 1px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background-color: var(--ivory);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--pale-gold);
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background-color: var(--seashell);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(47, 47, 47, 0.1);
+        }
+
+        .calendar-day.today {
+            background: var(--deep-charcoal);
+            color: var(--ivory);
+            border-color: var(--deep-charcoal);
+        }
+
+        .calendar-day.has-todos::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            width: 6px;
+            height: 6px;
+            background: var(--dusty-rose);
+            border-radius: 50%;
+        }
+
+        .day-number {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* Todo List Styles */
+        .todo-section {
+            flex: 1;
+            padding: 32px;
+            background: var(--ivory);
+        }
+
+        .selected-date {
+            font-size: 20px;
+            color: var(--deep-charcoal);
+            margin-bottom: 24px;
+            text-align: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--pale-gold);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-section {
+            background: var(--old-lace);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--pale-gold);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: var(--pale-gold);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage-green), var(--muted-blue));
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-weight: 400;
+            color: var(--deep-charcoal);
+            font-size: 14px;
+        }
+
+        .add-todo-section {
+            background: var(--old-lace);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--pale-gold);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 400;
+            color: var(--deep-charcoal);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--pale-gold);
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: var(--seashell);
+            color: var(--deep-charcoal);
+            font-family: inherit;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--dusty-rose);
+            box-shadow: 0 0 0 2px rgba(216, 164, 143, 0.1);
+        }
+
+        .btn-primary {
+            background: transparent;
+            color: var(--deep-charcoal);
+            border: 1px solid var(--deep-charcoal);
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.3s;
+            width: 100%;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            background: var(--deep-charcoal);
+            color: var(--ivory);
+            transform: translateY(-2px);
+        }
+
+        .todo-list {
+            background: var(--old-lace);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--pale-gold);
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--pale-gold);
+            transition: all 0.3s;
+            animation: slideIn 0.3s ease;
+            background: var(--ivory);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .todo-item:hover {
+            background: var(--seashell);
+            transform: translateX(4px);
+        }
+
+        .todo-item.completed {
+            background: var(--linen);
+            border-left: 3px solid var(--sage-green);
+        }
+
+        .todo-checkbox {
+            margin-right: 16px;
+            margin-left: 20px;
+        }
+
+        .todo-checkbox input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--sage-green);
+        }
+
+        .todo-content {
+            flex-grow: 1;
+        }
+
+        .todo-description {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 15px;
+            color: var(--deep-charcoal);
+            font-weight: 400;
+        }
+
+        .todo-item.completed .todo-description {
+            text-decoration: line-through;
+            color: var(--soft-gray);
+        }
+
+        .todo-type {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--deep-charcoal);
+            border: 1px solid currentColor;
+            letter-spacing: 0.5px;
+        }
+
+        .type-homework {
+            color: var(--sage-green);
+        }
+
+        .type-test {
+            color: var(--dusty-rose);
+        }
+
+        .type-quiz {
+            color: var(--muted-blue);
+        }
+
+        .type-project {
+            color: var(--soft-clay);
+        }
+
+        .todo-actions {
+            margin-left: 16px;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--soft-gray);
+            border: 1px solid var(--soft-gray);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: 400;
+            font-family: inherit;
+        }
+
+        .btn-delete:hover {
+            background: var(--soft-gray);
+            color: var(--ivory);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 32px;
+            color: var(--soft-gray);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .sync-status {
+            text-align: center;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--soft-gray);
+            background: var(--old-lace);
+            border-bottom: 1px solid var(--pale-gold);
+        }
+
+        .syncing {
+            color: var(--muted-blue);
+        }
+
+        .synced {
+            color: var(--sage-green);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-content {
+                flex-direction: column;
+            }
+            
+            .calendar-section, .todo-section {
+                border-right: none;
+                border-bottom: 1px solid var(--pale-gold);
+            }
+            
+            .calendar-grid {
+                gap: 4px;
+            }
+            
+            .calendar-day {
+                padding: 8px 4px;
+            }
+            
+            .day-number {
+                font-size: 12px;
+            }
+            
+            .app-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--ivory);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(47, 47, 47, 0.08);
+        }
+
+        .spinner {
+            border: 2px solid var(--pale-gold);
+            border-top: 2px solid var(--deep-charcoal);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--deep-charcoal);
+            margin-bottom: 16px;
+        }
+
+        .poetic-quote {
+            text-align: center;
+            padding: 20px;
+            color: var(--soft-gray);
+            font-style: italic;
+            font-size: 14px;
+            line-height: 1.8;
+            border-top: 1px solid var(--pale-gold);
+            background: var(--old-lace);
+        }
+
+        /* Inline emoji styling */
+        .inline-emoji {
+            filter: grayscale(1) brightness(0.7);
+            opacity: 0.6;
+            display: inline-block;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginContainer">
+        <div class="app-logo">💫</div>
+        <h1 class="login-title">Calendar <span class="inline-emoji">✨</span></h1>
+        <p class="login-subtitle">you are capable of living <span class="inline-emoji">🌱</span></p>
+        
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address <span class="inline-emoji">📧</span></label>
+                <input type="email" id="email" required placeholder="Enter your email 📝">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password <span class="inline-emoji">🔒</span></label>
+                <input type="password" id="password" required placeholder="Enter your password ✨">
+            </div>
+            
+            <button type="submit" class="btn-login">Sign In <span class="inline-emoji">🚀</span></button>
+            <button type="button" class="btn-signup" onclick="signUp()">Create Account <span class="inline-emoji">⭐</span></button>
+            <div class="error-message" id="errorMessage">Invalid email or password <span class="inline-emoji">⚠️</span></div>
+        </form>
+        
+        <div class="login-footer">
+            <p>there is more to love <span class="inline-emoji">💫</span></p>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container" id="appContainer">
+        <div class="app">
+            <div class="app-header">
+                <h1 class="app-title">Calendar <span class="inline-emoji">📅</span></h1>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span id="userEmail">user@example.com</span>
+                    <button class="btn-logout" onclick="logout()">Sign Out <span class="inline-emoji">👋</span></button>
+                </div>
+            </div>
+            
+            <div class="sync-status synced" id="syncStatus">
+                all changes saved <span class="inline-emoji">💾</span>
+            </div>
+            
+            <div class="app-content">
+                <!-- Calendar Section -->
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <div class="month-navigation">
+                            <button class="nav-btn" onclick="changeMonth(-1)">← Previous <span class="inline-emoji"></span></button>
+                            <button class="nav-btn" onclick="changeMonth(1)">Next → <span class="inline-emoji"></span></button>
+                        </div>
+                        <div class="current-month" id="currentMonth">June 2024 <span class="inline-emoji">🗓️</span></div>
+                    </div>
+                    
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Calendar days will be generated here -->
+                    </div>
+                </div>
+                
+                <!-- Todo List Section -->
+                <div class="todo-section">
+                    <div class="selected-date" id="selectedDate">
+                        select a date to begin your story <span class="inline-emoji">📌</span>
+                    </div>
+                    
+                    <div class="progress-section" style="display: none;" id="progressSection">
+                        <h3 class="section-title">Progress <span class="inline-emoji">📊</span></h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">0% Complete <span class="inline-emoji">🎯</span></div>
+                    </div>
+                    
+                    <div class="add-todo-section" style="display: none;" id="addTodoSection">
+                        <h3 class="section-title">New Task <span class="inline-emoji">📝</span></h3>
+                        <form id="addTodoForm">
+                            <div class="form-group">
+                                <label for="todoDescription">Task Description <span class="inline-emoji">✏️</span></label>
+                                <textarea id="todoDescription" rows="3" placeholder="what needs to be done in this chapter of your life? 📖" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="todoType">Category <span class="inline-emoji">🏷️</span></label>
+                                <select id="todoType" required>
+                                    <option value="HOMEWORK">Homework <span class="inline-emoji">📚</span></option>
+                                    <option value="TEST">Test <span class="inline-emoji">📝</span></option>
+                                    <option value="QUIZ">Quiz <span class="inline-emoji">❓</span></option>
+                                    <option value="PROJECT">Project <span class="inline-emoji">🎯</span></option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary">Add Task <span class="inline-emoji">➕</span></button>
+                        </form>
+                    </div>
+                    
+                    <div class="todo-list" id="todoList">
+                        <div class="empty-state" id="emptyState">
+                            <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;" class="emoji-subtle">📝</div>
+                            <h3>in another lifetime <span class="inline-emoji">🌙</span></h3>
+                            <p>maybe we'll find something much greater than that <span class="inline-emoji">✨</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="poetic-quote">
+                "you are the sun, my moon, and all of my stars" <span class="inline-emoji">💫</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>loading... <span class="inline-emoji">🪷</span></p>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBExC9dLoaqSZC7-RXZ2dis_K1IiGVl95k",
+            authDomain: "username-aca4e.firebaseapp.com",
+            projectId: "username-aca4e",
+            storageBucket: "username-aca4e.firebasestorage.app",
+            messagingSenderId: "544881903467",
+            appId: "1:544881903467:web:fa33c43c3b76b67738ee2e",
+            measurementId: "G-YVW5YSK8PG"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // State management
+        let currentDate = new Date();
+        let selectedDate = null;
+        let todos = {};
+        let currentUser = null;
+
+        // Initialize the application
+        function init() {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    showApp();
+                    loadTodos();
+                    startAutoCleanup(); // Start auto-cleanup when user logs in
+                } else {
+                    showLogin();
+                }
+            });
+        }
+
+        // Auto-delete tasks older than 2 weeks - CHANGED FROM 2 MONTHS TO 2 WEEKS
+        async function startAutoCleanup() {
+            if (!currentUser) return;
+            
+            try {
+                const twoWeeksAgo = new Date();
+                twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14); // Changed from setMonth to setDate
+                
+                const oldTodos = await db.collection('todos')
+                    .where('userId', '==', currentUser.uid)
+                    .where('date', '<', formatDate(twoWeeksAgo))
+                    .get();
+                
+                const deletePromises = [];
+                oldTodos.forEach(doc => {
+                    deletePromises.push(doc.ref.delete());
+                });
+                
+                await Promise.all(deletePromises);
+                
+                if (deletePromises.length > 0) {
+                    console.log(`Auto-deleted ${deletePromises.length} old tasks (older than 2 weeks)`);
+                    // Reload todos to update UI after cleanup
+                    await loadTodos();
+                }
+            } catch (error) {
+                console.error('Error in auto-cleanup:', error);
+            }
+        }
+
+        // Load todos from Firebase
+        async function loadTodos() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('todos')
+                    .where('userId', '==', currentUser.uid)
+                    .get();
+                
+                todos = {};
+                snapshot.forEach((doc) => {
+                    const todo = doc.data();
+                    const dateKey = todo.date;
+                    
+                    if (!todos[dateKey]) {
+                        todos[dateKey] = [];
+                    }
+                    
+                    todos[dateKey].push({
+                        id: doc.id,
+                        description: todo.description,
+                        type: todo.type,
+                        completed: todo.completed,
+                        createdAt: todo.createdAt
+                    });
+                });
+                
+                renderCalendar();
+                if (selectedDate) {
+                    const dateKey = formatDate(selectedDate);
+                    renderTodos(dateKey);
+                    updateProgress(dateKey);
+                }
+            } catch (error) {
+                console.error('Error loading todos:', error);
+            }
+        }
+
+        // Show login page
+        function showLogin() {
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Show main app
+        function showApp() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userAvatar').textContent = currentUser.email.charAt(0).toUpperCase();
+            
+            renderCalendar();
+        }
+
+        // Login function
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loginContainer').style.display = 'none';
+                
+                if (email && password) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    throw new Error('Please enter email and password');
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('loginContainer').style.display = 'block';
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        });
+
+        // Sign up function
+        async function signUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loginContainer').style.display = 'none';
+                
+                if (email && password) {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } else {
+                    throw new Error('Please enter email and password');
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('loginContainer').style.display = 'block';
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            auth.signOut().then(() => {
+                currentUser = null;
+                todos = {};
+                showLogin();
+            });
+        }
+
+        // Calendar rendering
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const monthYear = document.getElementById('currentMonth');
+            
+            // Clear existing calendar
+            calendarGrid.innerHTML = '';
+            
+            // Add day headers
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day-header';
+                dayElement.textContent = day;
+                calendarGrid.appendChild(dayElement);
+            });
+            
+            // Set month year display
+            monthYear.textContent = currentDate.toLocaleDateString('en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+            }) + ' 📅';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day';
+                calendarGrid.appendChild(emptyCell);
+            }
+            
+            // Add days of the month
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                date.setHours(0, 0, 0, 0);
+                
+                dayElement.className = 'calendar-day';
+                if (date.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+                
+                const dateKey = formatDate(date);
+                if (todos[dateKey] && todos[dateKey].length > 0) {
+                    dayElement.classList.add('has-todos');
+                }
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = day;
+                
+                dayElement.appendChild(dayNumber);
+                dayElement.addEventListener('click', () => selectDate(date));
+                
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        // Date selection
+        function selectDate(date) {
+            selectedDate = date;
+            const dateKey = formatDate(date);
+            
+            // Update UI
+            document.getElementById('selectedDate').textContent = 
+                date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }) + ' 📌';
+            
+            document.getElementById('addTodoSection').style.display = 'block';
+            
+            renderTodos(dateKey);
+            updateProgress(dateKey);
+        }
+
+        // Todo rendering
+        function renderTodos(dateKey) {
+            const todoList = document.getElementById('todoList');
+            const dateTodos = todos[dateKey] || [];
+            
+            if (dateTodos.length === 0) {
+                todoList.innerHTML = `
+                    <div class="empty-state" id="emptyState">
+                        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;" class="emoji-subtle">📝</div>
+                        <h3>someday, we will find 🌙</h3>
+                        <p>what we are looking for ✨</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            todoList.innerHTML = '<h3 class="section-title">Today\'s Tasks 📋</h3>';
+            
+            dateTodos.forEach((todo) => {
+                const todoElement = document.createElement('div');
+                todoElement.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                
+                todoElement.innerHTML = `
+                    <div class="todo-checkbox">
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                               onchange="toggleTodo('${todo.id}')">
+                    </div>
+                    <div class="todo-content">
+                        <span class="todo-description">${todo.description}</span>
+                        <span class="todo-type type-${todo.type.toLowerCase()}">${todo.type}</span>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="btn-delete" onclick="deleteTodo('${todo.id}')">Release 🗑️</button>
+                    </div>
+                `;
+                todoList.appendChild(todoElement);
+            });
+        }
+
+        // Progress tracking
+        function updateProgress(dateKey) {
+            const dateTodos = todos[dateKey] || [];
+            const progressSection = document.getElementById('progressSection');
+            
+            if (dateTodos.length === 0) {
+                progressSection.style.display = 'none';
+                return;
+            }
+            
+            progressSection.style.display = 'block';
+            const completed = dateTodos.filter(todo => todo.completed).length;
+            const total = dateTodos.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('progressFill').style.width = `${percentage}%`;
+            document.getElementById('progressText').textContent = 
+                `${percentage}% Complete (${completed}/${total} tasks) 🎯`;
+        }
+
+        // Add todo
+        async function addTodo(event) {
+            event.preventDefault();
+            
+            if (!selectedDate || !currentUser) return;
+            
+            const description = document.getElementById('todoDescription').value;
+            const type = document.getElementById('todoType').value;
+            const dateKey = formatDate(selectedDate);
+            
+            try {
+                // Create todo data
+                const todoData = {
+                    userId: currentUser.uid,
+                    description: description,
+                    type: type,
+                    completed: false,
+                    date: dateKey,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Add to Firebase
+                await db.collection('todos').add(todoData);
+                
+                // Reset form
+                document.getElementById('addTodoForm').reset();
+                
+                // Reload todos to update the UI
+                await loadTodos();
+                
+            } catch (error) {
+                console.error('Error adding todo:', error);
+            }
+        }
+
+        // Toggle todo completion
+        async function toggleTodo(todoId) {
+            if (!currentUser) return;
+            
+            try {
+                const todoRef = db.collection('todos').doc(todoId);
+                const todoDoc = await todoRef.get();
+                
+                if (todoDoc.exists) {
+                    await todoRef.update({
+                        completed: !todoDoc.data().completed
+                    });
+                    await loadTodos(); // Reload to update UI
+                }
+            } catch (error) {
+                console.error('Error toggling todo:', error);
+            }
+        }
+
+        // Delete todo
+        async function deleteTodo(todoId) {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('todos').doc(todoId).delete();
+                await loadTodos(); // Reload to update UI
+            } catch (error) {
+                console.error('Error deleting todo:', error);
+            }
+        }
+
+        // Change month
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            document.getElementById('addTodoForm').addEventListener('submit', addTodo);
+        });
+    </script>
+</body>
+</html>
